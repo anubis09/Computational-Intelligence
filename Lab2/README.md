@@ -4,7 +4,6 @@ The following solution was developed together with [Andrea Pellegrino](https://g
 
 Firstly we tried a few strategies, but we quickly realised that they weren't evolutionary strategies (Other Strategies result in the notebook).
 We leave them here since at least they provide good results at playing Nim.
-# remember to write all not evolutionary strategy in another file, import it and then show the results.
 
 The only evolutionary strategy implemented here is the real_es.
 The idea is to generate N number of generation. For each generation:
