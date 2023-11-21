@@ -43,3 +43,8 @@ These are the main results:
 - using `optimal` strategy as opponent: 77 % of wins
 
 ![real es VS optimal](https://github.com/andry2327/Computational-Intelligence/blob/main/LABS/L02%20-%20NIM-ES/img/plot_reals_es_VS_optimal.png)
+
+# Peer review
+## Done
+[Federico Buccellato](https://github.com/FedeBucce/Computational_intelligence/issues/1)
+## Received
