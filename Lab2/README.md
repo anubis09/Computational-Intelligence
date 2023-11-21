@@ -47,4 +47,5 @@ These are the main results:
 # Peer review
 ## Done
 [Federico Buccellato](https://github.com/FedeBucce/Computational_intelligence/issues/1)
+[Massimo Porcheddu](https://github.com/TheMassimo/Computational_intelligence/issues/1)
 ## Received
