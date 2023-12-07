@@ -66,4 +66,4 @@ Across multiple runs, we notices that the bit assign strategy is not robust and 
 
 # Peer review
 [Paola Matassa](https://github.com/PaolaMts/ComputationalIntelligence/issues/4)
-[Arild Strømsvåg]([https://github.com/arildus/computational-intelligence](https://github.com/arildus/computational-intelligence/issues/1)https://github.com/arildus/computational-intelligence/issues/1)
+[Arild Strømsvåg](https://github.com/arildus/computational-intelligence](https://github.com/arildus/computational-intelligence/issues/1)https://github.com/arildus/computational-intelligence/issues/1)
