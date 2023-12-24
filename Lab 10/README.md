@@ -12,7 +12,7 @@ Two main classes are implemented:
 
 ## RLayer
 
-The ```RLayer``` has an internal dictionary called policy, where each state of the game (discovered by the agent) is associated with a value. 
+The ```RLayer``` has an internal dictionary called policy, where each discovered state of the game is associated with a value. 
 When the agent is in train mode, it has a 0.3 probability to make a random move (this allows exploration), otherwise it takes the best possible move that can be done, based on the values in the policy and returns it. 
 All the chosen moves in a training game are stored in a list.
 
