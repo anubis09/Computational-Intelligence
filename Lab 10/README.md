@@ -1,6 +1,6 @@
 # LAB10
 
-The following solution was developed together with [Lorenzo Tozzi](https://github.com/anubis09/Computational-Intelligence).
+The following solution was developed together with [Andrea Pellegrino](https://github.com/andry2327/Computational-Intelligence).
 
 Two main classes are implemented:
 - `Player`: this class serves as an abstract foundation from which various player types can be built. We implemented three kind of plyers from it:
