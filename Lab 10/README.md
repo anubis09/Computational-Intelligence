@@ -38,3 +38,5 @@ The results are:
 
 Notice that with more epochs of training (around 500_000 in total), the ```rl_RL_trained``` agent can reach the performances of the other agents.
 
+# Peer Review Done
+[Alberto Ricatto](https://github.com/albyrika/computational-intelligence/issues/5)
