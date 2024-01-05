@@ -40,3 +40,5 @@ Notice that with more epochs of training (around 500_000 in total), the ```rl_RL
 
 # Peer Review Done
 [Alberto Ricatto](https://github.com/albyrika/computational-intelligence/issues/5)
+[Paolo Muccilli](https://github.com/pmuccilli/CI/issues/3)
+
