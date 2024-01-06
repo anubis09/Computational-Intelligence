@@ -1,3 +1,4 @@
 .env/
 Slides/
 .DS_Store
+Quixo/__pycache__

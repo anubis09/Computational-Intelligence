@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum
 import numpy as np
+from termcolor import colored
+import os
 
 # Rules on PDF
 
@@ -52,8 +54,31 @@ class Game(object):
         return deepcopy(self.current_player_idx)
 
     def print(self):
-        """Prints the board. -1 are neutral pieces, 0 are pieces of player 0, 1 pieces of player 1"""
-        print(self._board)
+        """Prints the board. -1 are neutral pieces, X are pieces of player 0, O pieces of player 1"""
+        BOARD_DIM = 5
+        l_len = (
+            BOARD_DIM * 6 + 1
+        )  # This is just for printing the right number of '-'
+        os.system("cls||clear")
+        print("   ", "  (0)   (1)   (2)   (3)   (4)")
+        for i in range(BOARD_DIM):
+            print("   ", "-" * l_len)
+            print(f"({i})", "| ", end="")
+            print(
+                " | ".join(
+                    map(
+                        lambda e: "   "
+                        if e == -1
+                        else colored(" X ", "red")
+                        if e == 0
+                        else colored(" O ", "green"),
+                        self._board[i].astype(int),
+                    )
+                ),
+                end=" ",
+            )
+            print("|")
+        print("   ", "-" * l_len)
 
     def check_winner(self) -> int:
         """Check the winner. Returns the player ID of the winner if any, otherwise returns -1"""
@@ -91,6 +116,7 @@ class Game(object):
 
     def play(self, player1: Player, player2: Player) -> int:
         """Play the game. Returns the winning player"""
+        self.print()
         players = [player1, player2]
         winner = -1
         while winner < 0:
@@ -102,6 +128,7 @@ class Game(object):
                     self
                 )
                 ok = self.__move(from_pos, slide, self.current_player_idx)
+            self.print()
             winner = self.check_winner()
         return winner
 
