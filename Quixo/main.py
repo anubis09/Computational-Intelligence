@@ -38,7 +38,7 @@ class HumanPlayer(Player):
 
     def make_move(self, game: "Game") -> tuple[tuple[int, int], Move]:
         print(
-            "Remember the convention: X goes left to right, Y goes top to bottom. "
+            "Remember the convention: X goes left to right, Y goes top to bottom."
         )
         inp = input("insert the X and Y coordinate in the format: 'x y': ")
         x, y = (int(coord) for coord in inp.split(" "))
@@ -60,5 +60,6 @@ if __name__ == "__main__":
     g = Game()
     player1 = HumanPlayer()
     player2 = RandomPlayer()
+    # player1 starts always first.
     winner = g.play(player1, player2)
     print(f"Winner: Player {winner}")
