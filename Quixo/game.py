@@ -53,6 +53,21 @@ class Game(object):
         """
         return deepcopy(self.current_player_idx)
 
+    def get_possible_moves(self):
+        possible_moves = []
+        slides = [Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT]
+        for x in range(self._board.shape[0]):
+            for y in range(self._board.shape[1]):
+                # we are checking the move (x,y) but the control systems expects an inversion in the tuple.
+                # so we pass (y,x)
+                from_pos = (y, x)
+                for slide in slides:
+                    if self.__check_if_borders(
+                        from_pos, self.get_current_player
+                    ) and self.__check_if_can_slide(from_pos, slide):
+                        possible_moves.append(((x, y), slide))
+        return possible_moves
+
     def print(self):
         """Prints the board. -1 are neutral pieces, X are pieces of player 0, O pieces of player 1"""
         BOARD_DIM = 5
@@ -83,13 +98,16 @@ class Game(object):
     def check_winner(self) -> int:
         """Check the winner. Returns the player ID of the winner if any, otherwise returns -1"""
         # for each row
+        winner = -1
         for x in range(self._board.shape[0]):
             # if a player has completed an entire row
             if self._board[x, 0] != -1 and all(
                 self._board[x, :] == self._board[x, 0]
             ):
-                # return the relative id
-                return self._board[x, 0]
+                # return winner is this guy
+                winner = self._board[x, 0]
+        if winner > -1 and winner != self.get_current_player():
+            return winner
         # for each column
         for y in range(self._board.shape[1]):
             # if a player has completed an entire column
@@ -97,29 +115,35 @@ class Game(object):
                 self._board[:, y] == self._board[0, y]
             ):
                 # return the relative id
-                return self._board[0, y]
+                winner = self._board[0, y]
+        if winner > -1 and winner != self.get_current_player():
+            return winner
         # if a player has completed the principal diagonal
         if self._board[0, 0] != -1 and all(
             [self._board[x, x] for x in range(self._board.shape[0])]
             == self._board[0, 0]
         ):
             # return the relative id
-            return self._board[0, 0]
+            winner = self._board[0, 0]
+        if winner > -1 and winner != self.get_current_player():
+            return winner
         # if a player has completed the secondary diagonal
         if self._board[0, -1] != -1 and all(
             [self._board[x, -(x + 1)] for x in range(self._board.shape[0])]
             == self._board[0, -1]
         ):
             # return the relative id
-            return self._board[0, -1]
-        return -1
+            winner = self._board[0, -1]
+        return winner
 
     def play(self, player1: Player, player2: Player) -> int:
         """Play the game. Returns the winning player"""
+        n_moves = 0
+        moves_limit = 100
         self.print()
         players = [player1, player2]
         winner = -1
-        while winner < 0:
+        while winner < 0 and n_moves < moves_limit:
             self.current_player_idx += 1
             self.current_player_idx %= len(players)
             ok = False
@@ -129,7 +153,10 @@ class Game(object):
                 )
                 ok = self.__move(from_pos, slide, self.current_player_idx)
             self.print()
+            n_moves += 1
+            print(f"from pos: {from_pos}, slide: {slide}")
             winner = self.check_winner()
+        print(f"n_moves total = {n_moves}")
         return winner
 
     def __move(
@@ -147,9 +174,9 @@ class Game(object):
                 self._board[(from_pos[1], from_pos[0])] = deepcopy(prev_value)
         return acceptable
 
-    def __take(self, from_pos: tuple[int, int], player_id: int) -> bool:
-        """Take piece"""
-        # acceptable only if in border
+    def __check_if_borders(
+        self, from_pos: tuple[int, int], player_id: int
+    ) -> bool:
         acceptable: bool = (
             # check if it is in the first row
             (from_pos[0] == 0 and from_pos[1] < 5)
@@ -161,12 +188,19 @@ class Game(object):
             or (from_pos[1] == 4 and from_pos[0] < 5)
             # and check if the piece can be moved by the current player
         ) and (self._board[from_pos] < 0 or self._board[from_pos] == player_id)
+        return acceptable
+
+    def __take(self, from_pos: tuple[int, int], player_id: int) -> bool:
+        """Take piece"""
+        # acceptable only if in border
+        acceptable = self.__check_if_borders(from_pos, player_id)
         if acceptable:
             self._board[from_pos] = player_id
         return acceptable
 
-    def __slide(self, from_pos: tuple[int, int], slide: Move) -> bool:
-        """Slide the other pieces"""
+    def __check_if_can_slide(
+        self, from_pos: tuple[int, int], slide: Move
+    ) -> bool:
         # define the corners
         SIDES = [(0, 0), (0, 4), (4, 0), (4, 4)]
         # if the piece position is not in a corner
@@ -214,6 +248,11 @@ class Game(object):
             or acceptable_left
             or acceptable_right
         )
+        return acceptable
+
+    def __slide(self, from_pos: tuple[int, int], slide: Move) -> bool:
+        """Slide the other pieces"""
+        acceptable = self.__check_if_can_slide(from_pos, slide)
         # if it is
         if acceptable:
             # take the piece
