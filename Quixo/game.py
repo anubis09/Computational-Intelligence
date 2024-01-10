@@ -47,6 +47,10 @@ class Game(object):
         """
         return deepcopy(self._board)
 
+    def get_hash(self) -> str:
+        """Return a string of the board current state"""
+        return str(self._board)
+
     def get_current_player(self) -> int:
         """
         Returns the current player
@@ -63,7 +67,7 @@ class Game(object):
                 from_pos = (y, x)
                 for slide in slides:
                     if self.__check_if_borders(
-                        from_pos, self.get_current_player
+                        from_pos, self.current_player_idx
                     ) and self.__check_if_can_slide(from_pos, slide):
                         possible_moves.append(((x, y), slide))
         return possible_moves
@@ -138,8 +142,11 @@ class Game(object):
 
     def play(self, player1: Player, player2: Player) -> int:
         """Play the game. Returns the winning player"""
+        # resetting the board
+        self._board = np.ones((5, 5), dtype=np.uint8) * -1
+        # standard play
         n_moves = 0
-        moves_limit = 100
+        moves_limit = 150
         self.print()
         players = [player1, player2]
         winner = -1
@@ -154,9 +161,8 @@ class Game(object):
                 ok = self.__move(from_pos, slide, self.current_player_idx)
             self.print()
             n_moves += 1
-            print(f"from pos: {from_pos}, slide: {slide}")
             winner = self.check_winner()
-        print(f"n_moves total = {n_moves}")
+        # print(f"n_moves total = {n_moves}")
         return winner
 
     def __move(

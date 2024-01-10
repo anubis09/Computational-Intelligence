@@ -1,5 +1,7 @@
 import random
 from game import Game, Move, Player
+import json
+from collections import defaultdict
 
 
 class RandomPlayer(Player):
@@ -13,15 +15,19 @@ class RandomPlayer(Player):
 
 
 class RLayer(Player):
-    def __init__(self) -> None:
+    def __init__(self, path) -> None:
         super().__init__()
-        self._policy = {}  # TODO import the state value policy
+        if path:
+            f = open(path, "r")
+            self._policy = dict(json.load(f))
+        else:
+            self._policy = defaultdict(float)
 
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
-        possible_moves = game.possible_moves()
+        possible_moves = game.get_possible_moves()
         # selects the best move in the policy.
         best_move = None
-        board_hash = str(game.get_board)
+        board_hash = game.get_hash()
         best_value = float("-inf")
         for move in possible_moves:
             key = (board_hash, move)
