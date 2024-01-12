@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 class KeyValuePolicyTrainer(RLayer):
     def __init__(self, is_Q_learn: bool) -> None:
+        self.train_mode = True
         super().__init__(None)
         self._epsilon = 0.3
         self._game_moves = []
@@ -22,8 +23,8 @@ class KeyValuePolicyTrainer(RLayer):
     # If no moves available?? Potremmo farlo giocare a caso.
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
         possible_moves = game.get_possible_moves()
-        board_hash = game.get_hash()
-        if np.random.random() < self._epsilon:
+        board_hash = str(game.get_board())
+        if self.train_mode and np.random.random() < self._epsilon:
             # exploration phase
             index = np.random.choice(len(possible_moves))
             move = possible_moves[index]
@@ -56,6 +57,14 @@ class KeyValuePolicyTrainer(RLayer):
 
     def q_learn_back_prop(self, reward: int) -> None:
         pass
+
+    def n_explored_states(self):
+        # states different from zero.
+        counter = 0
+        for k, v in self._policy.items():
+            if v != 0:
+                counter += 1
+        return counter, len(self._policy.keys())
 
     def save_policy(self, name) -> None:
         """
@@ -101,4 +110,20 @@ class Game_trainer(Game):
 if __name__ == "__main__":
     player = KeyValuePolicyTrainer(is_Q_learn=False)
     g = Game_trainer()
-    g.train(player, RandomPlayer(), 1000)
+    g.train(player, RandomPlayer(), 100000)
+
+    player.train_mode = False
+
+    wins_as_first = 0
+    for _ in range(100):
+        winner = g.play(player, RandomPlayer())
+        if winner == 0:
+            wins_as_first += 1
+    print(f"Wins as first: {wins_as_first/100:.2f}%")
+
+    wins_as_second = 0
+    for _ in range(100):
+        winner = g.play(RandomPlayer(), player)
+        if winner == 1:
+            wins_as_second += 1
+    print(f"Wins as second: {wins_as_second/100:.2f}%")

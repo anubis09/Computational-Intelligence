@@ -27,7 +27,7 @@ class RLayer(Player):
         possible_moves = game.get_possible_moves()
         # selects the best move in the policy.
         best_move = None
-        board_hash = game.get_hash()
+        board_hash = str(game.get_board())
         best_value = float("-inf")
         for move in possible_moves:
             key = (board_hash, move)

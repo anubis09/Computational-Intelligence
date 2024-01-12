@@ -47,10 +47,6 @@ class Game(object):
         """
         return deepcopy(self._board)
 
-    def get_hash(self) -> str:
-        """Return a string of the board current state"""
-        return str(self._board)
-
     def get_current_player(self) -> int:
         """
         Returns the current player
