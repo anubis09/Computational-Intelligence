@@ -1,4 +1,4 @@
-from game import Game
+from Quixo.old_game import Game
 from players import *
 
 if __name__ == "__main__":

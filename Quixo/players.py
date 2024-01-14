@@ -19,21 +19,20 @@ class RLayer(Player):
         super().__init__()
         if path:
             f = open(path, "r")
-            self._policy = dict(json.load(f))
+            self._policy = dict(json.load(f))  # metterlo in un default dict
         else:
-            self._policy = defaultdict(float)
+            self._policy = defaultdict(lambda: defaultdict(float))
 
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
-        possible_moves = game.get_possible_moves()
         # selects the best move in the policy.
+        # TODO random moves if none is found
         best_move = None
         board_hash = str(game.get_board())
         best_value = float("-inf")
-        for move in possible_moves:
-            key = (board_hash, move)
-            if self._policy[key] > best_value:
+        for move, value in self._policy[board_hash].items():
+            if value > best_value:
                 best_move = move
-                best_value = self._policy[key]
+                best_value = value
         return best_move
 
 
@@ -45,7 +44,6 @@ class HumanPlayer(Player):
         print(
             "Remember the convention: X goes left to right, Y goes top to bottom."
         )
-        # print(game.get_possible_moves())
         inp = input(
             "insert the X and Y coordinate in the format: 'x y': "
         ).strip()
