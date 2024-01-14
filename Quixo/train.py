@@ -1,10 +1,9 @@
 import numpy as np
 from game import Game, Move, Player
-from players import RLayer, RandomPlayer, HumanPlayer
+from players import RLayer, RandomPlayer
 import os
 import json
 from tqdm import tqdm
-import pprint
 
 
 class KeyValuePolicyTrainer(RLayer):
@@ -88,6 +87,23 @@ class GameTrainer(Game):
         # os.system("cls||clear")
         pass
 
+    def __acceptable_slides(self, from_position: tuple[int, int]):
+        """When taking a piece from {from_position} returns the possible moves (slides)"""
+        acceptable_slides = [Move.BOTTOM, Move.TOP, Move.LEFT, Move.RIGHT]
+        axis_0 = from_position[0]  # axis_0 = 0 means uppermost row
+        axis_1 = from_position[1]  # axis_1 = 0 means leftmost column
+
+        if axis_0 == 0:  # can't move upwards if in the top row...
+            acceptable_slides.remove(Move.TOP)
+        elif axis_0 == 4:
+            acceptable_slides.remove(Move.BOTTOM)
+
+        if axis_1 == 0:
+            acceptable_slides.remove(Move.LEFT)
+        elif axis_1 == 4:
+            acceptable_slides.remove(Move.RIGHT)
+        return acceptable_slides
+
     def get_possible_moves(self):
         # __acceptable_slides -> prende from_pos e ritorna le slides possibili.
         # for solo sugli element di contorno. e prendiamo le posizion. poi abbiamo acceptable_slides che ci dice le slide possivbili.
@@ -98,14 +114,14 @@ class GameTrainer(Game):
                     self._board[row, col] == self.current_player_idx
                     or self._board[row, col] == -1
                 ):
-                    slides = self._Game__acceptable_slides((row, col))
+                    slides = self.__acceptable_slides((row, col))
                     for slide in slides:
                         moves.append(((col, row), slide))
                 if (
                     self._board[col, row] == self.current_player_idx
                     or self._board[row, col] == -1
                 ):
-                    slides = self._Game__acceptable_slides((col, row))
+                    slides = self.__acceptable_slides((col, row))
                     for slide in slides:
                         moves.append(((row, col), slide))
         return moves
@@ -139,7 +155,7 @@ class GameTrainer(Game):
 if __name__ == "__main__":
     player = KeyValuePolicyTrainer(is_Q_learn=False)
     g = GameTrainer()
-    g.train(player, RandomPlayer(), 100_000)
+    g.train(player, RandomPlayer(), 10_000)
 
     wins_as_first = 0
     for _ in range(100):
