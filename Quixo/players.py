@@ -21,7 +21,7 @@ class RLayer(Player):
             f = open(path, "r")
             self._policy = dict(json.load(f))  # metterlo in un default dict
         else:
-            self._policy = defaultdict(lambda: defaultdict(float))
+            self._policy = defaultdict(lambda: dict())
 
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
         # selects the best move in the policy.
