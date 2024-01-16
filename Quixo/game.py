@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum
 import numpy as np
+from termcolor import colored
 import os
 
 # Rules on PDF and https://cdn.1j1ju.com/medias/a8/5e/26-quixo-rulebook.pdf
@@ -127,6 +128,7 @@ class Game(object):
         """Play the game. Returns the winning player"""
         players = [player1, player2]
         winner = -1
+        self.print()
         while winner < 0:
             self.current_player_idx += 1
             self.current_player_idx %= len(players)
@@ -136,6 +138,7 @@ class Game(object):
                     self
                 )
                 ok = self.__move(from_pos, slide, self.current_player_idx)
+            self.print()
             winner = self.check_winner()
         return winner
 

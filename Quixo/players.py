@@ -2,6 +2,13 @@ import random
 from game import Game, Move, Player
 import json
 from collections import defaultdict
+import os
+
+
+def random_move() -> tuple[tuple[int, int], Move]:
+    from_pos = (random.randint(0, 4), random.randint(0, 4))
+    move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
+    return from_pos, move
 
 
 class RandomPlayer(Player):
@@ -9,31 +16,65 @@ class RandomPlayer(Player):
         super().__init__()
 
     def make_move(self, game: "Game") -> tuple[tuple[int, int], Move]:
-        from_pos = (random.randint(0, 4), random.randint(0, 4))
-        move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
-        return from_pos, move
+        return random_move()
 
 
 class RLayer(Player):
-    def __init__(self, path) -> None:
-        super().__init__()
-        if path:
-            f = open(path, "r")
-            self._policy = dict(json.load(f))  # metterlo in un default dict
+    def __init__(self, file_name) -> None:
+        if file_name:
+            path = os.path.join("Quixo", "Policies")
+            if not file_name.endswith(".json"):
+                file_name = file_name + ".json"
+            self.file_name = file_name
+            f = open(os.path.join(path, file_name), "r")
+            print("loading policy")
+            # importing it as a default dict.
+            self._policy = defaultdict(lambda: dict(), dict(json.load(f)))
+            print("policy loaded")
         else:
             self._policy = defaultdict(lambda: dict())
 
+    def move_to_str(self, move: tuple[tuple[int, int], Move]) -> str:
+        pos, slide = move
+        return str(pos) + ";" + str(slide)  # '(1,2);Move.TOP'
+
+    def str_to_move(self, move_str: str) -> tuple[tuple[int, int], Move]:
+        pos, slide = move_str.split(";")
+        pos = eval(pos)  # from tuple string to just tuple
+        slide_move = slide.split(".")[1]  # TOP, BOTTOM, RIGHT, LEFT
+        match slide_move:
+            case "TOP":
+                slide = Move.TOP
+            case "LEFT":
+                slide = Move.LEFT
+            case "BOTTOM":
+                slide = Move.BOTTOM
+            case _:
+                slide = Move.RIGHT
+        return (pos, slide)
+
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
         # selects the best move in the policy.
-        # TODO random moves if none is found
-        best_move = None
         board_hash = str(game.get_board())
-        best_value = float("-inf")
-        for move, value in self._policy[board_hash].items():
-            if value > best_value:
-                best_move = move
-                best_value = value
-        return best_move
+        pl_id = str(game.get_current_player())
+        key = board_hash + pl_id
+        # best_move = None
+        # best_value = float("-inf")
+        # if self._policy[key].keys():
+        #     # we know moves in this board set
+        #     for k, v in self._policy[key].items():
+        #         if v > best_value:
+        #             best_value = v
+        #             best_move = self.str_to_move(k)
+        #     return best_move
+        if self._policy[key].keys():
+            best_move = self.str_to_move(
+                max(self._policy[key].items(), key=lambda item: item[1])[0]
+            )
+            return best_move
+        else:
+            # we don't know any moves so we just take one random.
+            return random_move()
 
 
 class HumanPlayer(Player):
