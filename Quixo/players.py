@@ -20,7 +20,7 @@ class RandomPlayer(Player):
 
 
 class RLayer(Player):
-    def __init__(self, file_name) -> None:
+    def __init__(self, file_name: str = "") -> None:
         if file_name:
             path = os.path.join("Quixo", "Policies")
             if not file_name.endswith(".json"):

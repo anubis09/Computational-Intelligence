@@ -187,6 +187,8 @@ class KeyValuePolicyTrainer(RLayer):
         path = os.path.join("Quixo", "Policies")
         if not os.path.exists(path):
             os.makedirs(path)
+        if not self.file_name:
+            self.file_name = "new_policy_value_it.json"
         f = open(os.path.join(path, self.file_name), "w")
         print("saving policy")
         json.dump(self._policy, f, indent=4)
