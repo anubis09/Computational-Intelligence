@@ -7,8 +7,10 @@ from tqdm import tqdm
 
 
 class KeyValuePolicyTrainer(RLayer):
-    def __init__(self, is_Q_learn: bool, file_name: str = None) -> None:
-        super().__init__(file_name)
+    def __init__(
+        self, is_Q_learn: bool, name: str = "", file_name: str = ""
+    ) -> None:
+        super().__init__(name, file_name)
         # load policy as default dict.
         self.is_training = True
         self._epsilon = 0.3
@@ -188,11 +190,11 @@ class KeyValuePolicyTrainer(RLayer):
         if not os.path.exists(path):
             os.makedirs(path)
         if not self.file_name:
-            self.file_name = "new_policy_value_it.json"
+            self.file_name = "new_policy_value_it_" + self.name + ".json"
         f = open(os.path.join(path, self.file_name), "w")
-        print("saving policy")
+        print(f"saving {self.file_name}")
         json.dump(self._policy, f, indent=4)
-        print("policy saved")
+        print(f"{self.file_name} saved")
 
 
 class GameTrainer(Game):
@@ -269,42 +271,67 @@ class GameTrainer(Game):
     # The idea could be to leave the play as it is, then we can make our players play as first then as second.
     # we can also make array players shuffle. -> i'll go with this solution
     def train(self, trainee: Player, trainer: Player, epochs: int) -> None:
-        # trainee.set_epsilon(1)  # full exploration
+        if not trainee.file_name:
+            trainee.set_epsilon(1)
+        if not trainer.file_name:
+            trainer.set_epsilon(1)
         players = [trainee, trainer]
         winning_reward = 1
-        losing_reward = -2
+        losing_reward = -3
+        first_draw_reward = 0.1
+        second_draw_reward = 0.5
         bar = tqdm(total=epochs, desc="Epoch")
         for ep in range(epochs):
-            # if ep % (epochs // 100) == 0:
-            #     old_eps = trainee.get_epsilon()
-            #     new_eps = old_eps - 0.1 if old_eps > 0.3 else old_eps
-            #     trainee.set_epsilon(new_eps)
+            if ep % (epochs // 100) == 0:
+                old_eps = trainee.get_epsilon()
+                new_eps = old_eps - 0.1 if old_eps > 0.3 else old_eps
+                # eps decrease at the same rate for both.
+                trainee.set_epsilon(new_eps)
+                trainer.set_epsilon(new_eps)
             np.random.shuffle(players)
             winner_idx = self.play(players[0], players[1])
+            loser_idx = (winner_idx + 1) % 2
             if winner_idx != -1:
                 if isinstance(players[winner_idx], RLayer):
                     players[winner_idx].back_prop(winning_reward)
-                loser_idx = (winner_idx + 1) % 2
                 if isinstance(players[loser_idx], RLayer):
                     players[loser_idx].back_prop(losing_reward)
+            else:
+                if isinstance(players[0], RLayer):
+                    # if first start draws, not very good.
+                    players[0].back_prop(first_draw_reward)
+                if isinstance(players[1], RLayer):
+                    # if second starting draws, good for him
+                    players[1].back_prop(second_draw_reward)
             bar.update(1)
-        trainee.save_policy()
+        if isinstance(trainee, RLayer):
+            trainee.save_policy()
+        if isinstance(trainer, RLayer):
+            trainer.save_policy()
+        return
 
 
 if __name__ == "__main__":
-    player = KeyValuePolicyTrainer(
-        is_Q_learn=False, file_name="policy_value_it_3M"
+    player_trainee = KeyValuePolicyTrainer(
+        is_Q_learn=False,
+        name="trainee",
+        file_name="new_policy_value_it_trainee_600m.json",
+    )
+    player_trainer = KeyValuePolicyTrainer(
+        is_Q_learn=False,
+        name="trainer",
+        file_name="new_policy_value_it_trainer_600m.json",
     )
     g = GameTrainer()
-    # g.train(player, RandomPlayer(), 1_000_000)
+    g.train(player_trainee, player_trainer, 100_000)
 
-    player.is_training = False
-    n_game = 1000
+    player_trainee.is_training = False
+    n_game = 5000
 
     print("starting evaluation as first player")
     wins_as_first = 0
     for _ in range(n_game):
-        winner = g.play(player, RandomPlayer())
+        winner = g.play(player_trainee, RandomPlayer())
         if winner == 0:
             wins_as_first += 1
     print(f"Wins as first: {wins_as_first/n_game:.2f}%")
@@ -312,7 +339,7 @@ if __name__ == "__main__":
     print("starting evaluation as second player")
     wins_as_second = 0
     for _ in range(n_game):
-        winner = g.play(RandomPlayer(), player)
+        winner = g.play(RandomPlayer(), player_trainee)
         if winner == 1:
             wins_as_second += 1
     print(f"Wins as second: {wins_as_second/n_game:.2f}%")

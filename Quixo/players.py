@@ -20,17 +20,19 @@ class RandomPlayer(Player):
 
 
 class RLayer(Player):
-    def __init__(self, file_name: str = "") -> None:
+    def __init__(self, name: str = "", file_name: str = "") -> None:
+        self.name = name
+        self.file_name = file_name
         if file_name:
             path = os.path.join("Quixo", "Policies")
             if not file_name.endswith(".json"):
                 file_name = file_name + ".json"
             self.file_name = file_name
-            f = open(os.path.join(path, file_name), "r")
-            print("loading policy")
+            f = open(os.path.join(path, self.file_name), "r")
+            print(f"loading {self.file_name}")
             # importing it as a default dict.
             self._policy = defaultdict(lambda: dict(), dict(json.load(f)))
-            print("policy loaded")
+            print(f"{self.file_name} loaded")
         else:
             self._policy = defaultdict(lambda: dict())
 
