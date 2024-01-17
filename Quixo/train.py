@@ -272,6 +272,7 @@ class GameTrainer(Game):
     # we can also make array players shuffle. -> i'll go with this solution
     def train(self, trainee: Player, trainer: Player, epochs: int) -> None:
         if not trainee.file_name:
+            print("starting full exploration mode")
             trainee.set_epsilon(1)
         if not trainer.file_name:
             trainer.set_epsilon(1)
@@ -323,7 +324,7 @@ if __name__ == "__main__":
         file_name="new_policy_value_it_trainer_600m.json",
     )
     g = GameTrainer()
-    g.train(player_trainee, player_trainer, 100_000)
+    g.train(player_trainee, player_trainer, 400_000)
 
     player_trainee.is_training = False
     n_game = 5000
