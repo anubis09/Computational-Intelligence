@@ -15,7 +15,7 @@ class KeyValuePolicyTrainer(RLayer):
         self.is_training = True
         self._epsilon = 0.3
         self._game_moves = []
-        self._lr = 0.1
+        self._lr = 0.2
         self._gamma_decay = 0.9
         self.is_Q_learn = is_Q_learn
 
@@ -35,45 +35,6 @@ class KeyValuePolicyTrainer(RLayer):
             self._policy[key][self.move_to_str(move)] = 0
         self._game_moves.append((key, self.move_to_str(move)))
         return move
-
-    # def inference(
-    #     self, board_hash: str, possible_moves: list
-    # ) -> tuple[tuple[int, int], Move]:
-    #     best_move = None
-    #     best_value = float("-inf")
-    #     for move in possible_moves:
-    #         if self.move_to_str(move) in self._policy[board_hash].keys():
-    #             if (
-    #                 self._policy[board_hash][self.move_to_str(move)]
-    #                 > best_value
-    #             ):
-    #                 best_move = move
-    #                 best_value = self._policy[board_hash][
-    #                     self.move_to_str(move)
-    #                 ]
-    #         else:
-    #             value = 0
-    #             if value > best_value:
-    #                 best_value = value
-    #                 best_move = move
-
-    #     self._policy[board_hash][self.move_to_str(best_move)] = best_value
-    #     self._game_moves.append((board_hash, self.move_to_str(best_move)))
-    #     return best_move
-
-    # def make_move(self, game: "GameTrainer") -> tuple[tuple[int, int], Move]:
-    #     possible_moves = game.get_possible_moves()
-    #     board_hash = str(game.get_board())
-    #     if self.is_training:
-    #         if np.random.random() < self._epsilon:
-    #             move = self.exploration(
-    #                 board_hash=board_hash, possible_moves=possible_moves
-    #             )
-    #             return move
-    #         else:
-    #             return self.inference(board_hash, possible_moves)
-    #     else:
-    #         return self.inference(board_hash, possible_moves)
 
     def make_move(self, game: "GameTrainer") -> tuple[tuple[int, int], Move]:
         possible_moves = game.get_possible_moves()
@@ -102,56 +63,6 @@ class KeyValuePolicyTrainer(RLayer):
                 # we don't know any moves so we just take it randomly.
                 move = self.exploration(key=key, possible_moves=possible_moves)
                 return move
-
-    # def make_move(self, game: "GameTrainer") -> tuple[tuple[int, int], Move]:
-    #     possible_moves = game.get_possible_moves()
-    #     board_hash = str(game.get_board())
-    #     if np.random.random() < self._epsilon:
-    #         move = self.exploration(
-    #             board_hash=board_hash, possible_moves=possible_moves
-    #         )
-    #         return move
-    #     else:
-    #         # selects the best move in the policy.
-    #         best_move = None
-    #         best_value = float("-inf")
-    #         for move in possible_moves:
-    #             if self.move_to_str(move) in self._policy[board_hash].keys():
-    #                 if (
-    #                     self._policy[board_hash][self.move_to_str(move)]
-    #                     > best_value
-    #                 ):
-    #                     best_move = move
-    #                     best_value = self._policy[board_hash][
-    #                         self.move_to_str(move)
-    #                     ]
-    #             else:
-    #                 value = 0
-    #                 if value > best_value:
-    #                     best_value = value
-    #                     best_move = move
-
-    #         self._policy[board_hash][self.move_to_str(best_move)] = best_value
-    #         self._game_moves.append((board_hash, self.move_to_str(best_move)))
-    #         return best_move
-    # best_move = None
-    # best_value = float("-inf")
-    # if self._policy[board_hash].keys():
-    #     # we know moves in this board set
-    #     for k, v in self._policy[board_hash].items():
-    #         if v > best_value:
-    #             best_value = v
-    #             best_move = self.str_to_move(k)
-    #     self._game_moves.append(
-    #         (board_hash, self.move_to_str(best_move))
-    #     )
-    #     return best_move
-    # else:
-    #     # we don't know any moves so we just take it randomly.
-    #     move = self.exploration(
-    #         board_hash=board_hash, possible_moves=possible_moves
-    #     )
-    #     return move
 
     def back_prop(self, reward: int) -> None:
         if self.is_Q_learn:
@@ -283,7 +194,7 @@ class GameTrainer(Game):
         second_draw_reward = 0.5
         bar = tqdm(total=epochs, desc="Epoch")
         for ep in range(epochs):
-            if ep % (epochs // 100) == 0:
+            if ep % (epochs // 30) == 0:
                 old_eps = trainee.get_epsilon()
                 new_eps = old_eps - 0.1 if old_eps > 0.3 else old_eps
                 # eps decrease at the same rate for both.
@@ -316,15 +227,15 @@ if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
         is_Q_learn=False,
         name="trainee",
-        file_name="new_policy_value_it_trainee_600m.json",
+        file_name="",
     )
     player_trainer = KeyValuePolicyTrainer(
         is_Q_learn=False,
         name="trainer",
-        file_name="new_policy_value_it_trainer_600m.json",
+        file_name="",
     )
     g = GameTrainer()
-    g.train(player_trainee, player_trainer, 400_000)
+    g.train(player_trainee, player_trainer, 2_000_000)
 
     player_trainee.is_training = False
     n_game = 5000
@@ -344,3 +255,7 @@ if __name__ == "__main__":
         if winner == 1:
             wins_as_second += 1
     print(f"Wins as second: {wins_as_second/n_game:.2f}%")
+
+    print(
+        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2f}%"
+    )
