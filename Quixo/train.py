@@ -3,6 +3,7 @@ from game import Game, Move, Player
 from players import RLayer, RandomPlayer
 import os
 import json
+import heapq
 from tqdm import tqdm
 
 
@@ -18,6 +19,7 @@ class KeyValuePolicyTrainer(RLayer):
         self._lr = 0.2
         self._gamma_decay = 0.9
         self.is_Q_learn = is_Q_learn
+        self.is_new_key = True
 
     def set_epsilon(self, eps: int) -> None:
         self._epsilon = eps
@@ -41,6 +43,13 @@ class KeyValuePolicyTrainer(RLayer):
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
+        if self.is_new_key:
+            key = (
+                key.replace(" ", "")
+                .replace("[", "")
+                .replace("]", "")
+                .replace("\n", "")
+            )
         if self.is_training and np.random.random() < self._epsilon:
             move = self.exploration(key=key, possible_moves=possible_moves)
             return move
@@ -93,6 +102,39 @@ class KeyValuePolicyTrainer(RLayer):
         counter = 0
         return counter, len(self._policy.keys())
 
+    def save_space(self, top_k: int = -1):
+        print("started pruning")
+        for k, dictio in list(self._policy.items()):
+            all_sub_keys = list(dictio.keys())
+            # removing all characters from the key.
+            new_key = k
+            # new_key = (
+            #     new_key.replace(" ", "")
+            #     .replace("[", "")
+            #     .replace("]", "")
+            #     .replace("\n", "")
+            # )
+            if len(all_sub_keys) > 1:
+                # if it's not a single state I just saw once.
+                self._policy[new_key] = dictio
+            else:
+                try:
+                    self._policy.pop(new_key)
+                except:
+                    pass
+            if len(all_sub_keys) > top_k > 0:
+                k_keys = heapq.nlargest(
+                    top_k, dictio, key=dictio.get
+                )  # this sort by values.
+                for sub_key in all_sub_keys:
+                    if sub_key not in k_keys:
+                        dictio.pop(sub_key)
+            if k != new_key:
+                self._policy.pop(k)
+
+        print("pruning ended")
+        return
+
     def save_policy(self) -> None:
         """
         It saves the policy
@@ -104,7 +146,7 @@ class KeyValuePolicyTrainer(RLayer):
             self.file_name = "new_policy_value_it_" + self.name + ".json"
         f = open(os.path.join(path, self.file_name), "w")
         print(f"saving {self.file_name}")
-        json.dump(self._policy, f, indent=4)
+        json.dump(self._policy, f)
         print(f"{self.file_name} saved")
 
 
@@ -185,7 +227,7 @@ class GameTrainer(Game):
         if not trainee.file_name:
             print("starting full exploration mode")
             trainee.set_epsilon(1)
-        if not trainer.file_name:
+        if isinstance(trainer, RLayer) and not trainer.file_name:
             trainer.set_epsilon(1)
         players = [trainee, trainer]
         winning_reward = 1
@@ -199,7 +241,8 @@ class GameTrainer(Game):
                 new_eps = old_eps - 0.1 if old_eps > 0.3 else old_eps
                 # eps decrease at the same rate for both.
                 trainee.set_epsilon(new_eps)
-                trainer.set_epsilon(new_eps)
+                if isinstance(trainer, RLayer):
+                    trainer.set_epsilon(new_eps)
             np.random.shuffle(players)
             winner_idx = self.play(players[0], players[1])
             loser_idx = (winner_idx + 1) % 2
@@ -218,24 +261,21 @@ class GameTrainer(Game):
             bar.update(1)
         if isinstance(trainee, RLayer):
             trainee.save_policy()
-        if isinstance(trainer, RLayer):
-            trainer.save_policy()
+        # if isinstance(trainer, RLayer):
+        #     trainer.save_policy()
         return
 
 
 if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
         is_Q_learn=False,
-        name="trainee",
-        file_name="",
+        name="",
+        file_name="new_policy_value_it_trainer_2M.json",
     )
-    player_trainer = KeyValuePolicyTrainer(
-        is_Q_learn=False,
-        name="trainer",
-        file_name="",
-    )
+
     g = GameTrainer()
-    g.train(player_trainee, player_trainer, 2_000_000)
+
+    # g.train(player_trainee, RandomPlayer(), 10_000)
 
     player_trainee.is_training = False
     n_game = 5000
@@ -259,3 +299,27 @@ if __name__ == "__main__":
     print(
         f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2f}%"
     )
+
+    player_trainee.save_space()
+    player_trainee.is_new_key = True
+
+    print("starting evaluation as first player")
+    wins_as_first = 0
+    for _ in range(n_game):
+        winner = g.play(player_trainee, RandomPlayer())
+        if winner == 0:
+            wins_as_first += 1
+    print(f"Wins as first: {wins_as_first/n_game:.2f}%")
+
+    print("starting evaluation as second player")
+    wins_as_second = 0
+    for _ in range(n_game):
+        winner = g.play(RandomPlayer(), player_trainee)
+        if winner == 1:
+            wins_as_second += 1
+    print(f"Wins as second: {wins_as_second/n_game:.2f}%")
+
+    print(
+        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2f}%"
+    )
+    player_trainee.save_policy()

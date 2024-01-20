@@ -60,6 +60,7 @@ class RLayer(Player):
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
+        key.replace(" ", "").replace("[", "").replace("]", "").replace("\n", "")
         # best_move = None
         # best_value = float("-inf")
         # if self._policy[key].keys():
