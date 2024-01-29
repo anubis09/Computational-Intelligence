@@ -19,7 +19,7 @@ class KeyValuePolicyTrainer(RLayer):
         self._lr = 0.2
         self._gamma_decay = 0.9
         self.is_Q_learn = is_Q_learn
-        self.is_new_key = True
+        # self.is_new_key = True
 
     def set_epsilon(self, eps: int) -> None:
         self._epsilon = eps
@@ -43,13 +43,13 @@ class KeyValuePolicyTrainer(RLayer):
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
-        if self.is_new_key:
-            key = (
-                key.replace(" ", "")
-                .replace("[", "")
-                .replace("]", "")
-                .replace("\n", "")
-            )
+        # if self.is_new_key:
+        key = (
+            key.replace(" ", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("\n", "")
+        )
         if self.is_training and np.random.random() < self._epsilon:
             move = self.exploration(key=key, possible_moves=possible_moves)
             return move
@@ -84,7 +84,8 @@ class KeyValuePolicyTrainer(RLayer):
         The back_prop function is responsible for updating the policy values in the agent's memory during the training process.
         It adjusts the policy values based on the received reward.
         """
-        for state in reversed(self._game_moves):
+        for _ in range(len(self._game_moves)):
+            state = self._game_moves.pop()
             # state tuple(board, move)
             board = state[0]
             move = state[1]
@@ -95,7 +96,21 @@ class KeyValuePolicyTrainer(RLayer):
         self._game_moves = []
 
     def q_learn_back_prop(self, reward: int) -> None:
-        pass
+        """The back_prop function is responsible for updating the policy values in the agent's memory during the training process.
+        It adjusts the policy values based on the received reward, in a Q learning setting
+        """
+        for i in range(len(self._game_moves) - 1):
+            r = 0 if i < len(self._game_moves) - 2 else reward
+            # state is a tuple (board, move)
+            board, move = self._game_moves[i]
+            next_board, _ = self._game_moves[i + 1]
+            self._policy[board][move] += self._lr * (
+                r
+                + self._gamma_decay * (max(self._policy[next_board].values()))
+                - self._policy[board][move]
+            )
+            # the reward for the intra moves is set to 0.
+        self._game_moves = []
 
     def n_explored_states(self):
         # states different from zero.
@@ -116,7 +131,8 @@ class KeyValuePolicyTrainer(RLayer):
             # )
             if len(all_sub_keys) > 1:
                 # if it's not a single state I just saw once.
-                self._policy[new_key] = dictio
+                pass
+                # self._policy[new_key] = dictio
             else:
                 try:
                     self._policy.pop(new_key)
@@ -129,8 +145,8 @@ class KeyValuePolicyTrainer(RLayer):
                 for sub_key in all_sub_keys:
                     if sub_key not in k_keys:
                         dictio.pop(sub_key)
-            if k != new_key:
-                self._policy.pop(k)
+            # if k != new_key:
+            #     self._policy.pop(k)
 
         print("pruning ended")
         return
@@ -268,14 +284,20 @@ class GameTrainer(Game):
 
 if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
-        is_Q_learn=False,
+        is_Q_learn=True,
         name="",
-        file_name="new_policy_value_it_trainer_2M.json",
+        file_name="new_policy_value_it_Q_learn_vs_random.json",
     )
+
+    # player_trainer = KeyValuePolicyTrainer(
+    #     is_Q_learn=False,
+    #     name="",
+    #     file_name="new_policy_value_it_rl_random_6M.json",
+    # )
 
     g = GameTrainer()
 
-    # g.train(player_trainee, RandomPlayer(), 10_000)
+    g.train(player_trainee, RandomPlayer(), 2_000_000)
 
     player_trainee.is_training = False
     n_game = 5000
@@ -301,7 +323,6 @@ if __name__ == "__main__":
     )
 
     player_trainee.save_space()
-    player_trainee.is_new_key = True
 
     print("starting evaluation as first player")
     wins_as_first = 0
