@@ -23,6 +23,9 @@ class RLayer(Player):
     def __init__(self, name: str = "", file_name: str = "") -> None:
         self.name = name
         self.file_name = file_name
+        self.n_moves = 0 # counter for number of moves
+        # if a file name is given, it loads the policy
+        # otherwise it create the policy
         if file_name:
             path = os.path.join("Quixo", "Policies")
             if not file_name.endswith(".json"):
@@ -36,10 +39,12 @@ class RLayer(Player):
         else:
             self._policy = defaultdict(lambda: dict())
 
+    # convert a move to its str format
     def move_to_str(self, move: tuple[tuple[int, int], Move]) -> str:
         pos, slide = move
         return str(pos) + ";" + str(slide)  # '(1,2);Move.TOP'
 
+    # convert a str to its move format
     def str_to_move(self, move_str: str) -> tuple[tuple[int, int], Move]:
         pos, slide = move_str.split(";")
         pos = eval(pos)  # from tuple string to just tuple
@@ -56,20 +61,12 @@ class RLayer(Player):
         return (pos, slide)
 
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
+        self.n_moves += 1
         # selects the best move in the policy.
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
-        key.replace(" ", "").replace("[", "").replace("]", "").replace("\n", "")
-        # best_move = None
-        # best_value = float("-inf")
-        # if self._policy[key].keys():
-        #     # we know moves in this board set
-        #     for k, v in self._policy[key].items():
-        #         if v > best_value:
-        #             best_value = v
-        #             best_move = self.str_to_move(k)
-        #     return best_move
+        key = key.replace(" ", "").replace("[", "").replace("]", "").replace("\n", "")
         if self._policy[key].keys():
             best_move = self.str_to_move(
                 max(self._policy[key].items(), key=lambda item: item[1])[0]

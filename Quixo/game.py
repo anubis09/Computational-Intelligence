@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 from termcolor import colored
 import os
+from IPython.display import clear_output
 
 # Rules on PDF and https://cdn.1j1ju.com/medias/a8/5e/26-quixo-rulebook.pdf
 
@@ -61,7 +62,11 @@ class Game(object):
         l_len = (
             BOARD_DIM * 6 + 1
         )  # This is just for printing the right number of '-'
-        os.system("cls||clear")
+        try:
+            shell = get_ipython().__class__.__name__
+            clear_output(wait=True)
+        except:
+            os.system("cls||clear")
         print("   ", "  (0)   (1)   (2)   (3)   (4)")
         for i in range(BOARD_DIM):
             print("   ", "-" * l_len)

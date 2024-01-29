@@ -122,22 +122,16 @@ class KeyValuePolicyTrainer(RLayer):
         for k, dictio in list(self._policy.items()):
             all_sub_keys = list(dictio.keys())
             # removing all characters from the key.
-            new_key = k
             # new_key = (
             #     new_key.replace(" ", "")
             #     .replace("[", "")
             #     .replace("]", "")
             #     .replace("\n", "")
             # )
-            if len(all_sub_keys) > 1:
-                # if it's not a single state I just saw once.
-                pass
-                # self._policy[new_key] = dictio
-            else:
-                try:
-                    self._policy.pop(new_key)
-                except:
-                    pass
+
+            if len(all_sub_keys) <= 4:
+                self._policy.pop(k)
+
             if len(all_sub_keys) > top_k > 0:
                 k_keys = heapq.nlargest(
                     top_k, dictio, key=dictio.get
@@ -145,6 +139,10 @@ class KeyValuePolicyTrainer(RLayer):
                 for sub_key in all_sub_keys:
                     if sub_key not in k_keys:
                         dictio.pop(sub_key)
+                    else:
+                        if top_k == 1:
+                            dictio[sub_key] = round(dictio[sub_key], 2)
+               
             # if k != new_key:
             #     self._policy.pop(k)
 
@@ -284,9 +282,9 @@ class GameTrainer(Game):
 
 if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
-        is_Q_learn=True,
+        is_Q_learn=False,
         name="",
-        file_name="new_policy_value_it_Q_learn_vs_random.json",
+        file_name="policy2.json",
     )
 
     # player_trainer = KeyValuePolicyTrainer(
@@ -297,10 +295,10 @@ if __name__ == "__main__":
 
     g = GameTrainer()
 
-    g.train(player_trainee, RandomPlayer(), 2_000_000)
+    # g.train(player_trainee, RandomPlayer(), 2_000_000)
 
     player_trainee.is_training = False
-    n_game = 5000
+    n_game = 1000
 
     print("starting evaluation as first player")
     wins_as_first = 0
@@ -308,7 +306,7 @@ if __name__ == "__main__":
         winner = g.play(player_trainee, RandomPlayer())
         if winner == 0:
             wins_as_first += 1
-    print(f"Wins as first: {wins_as_first/n_game:.2f}%")
+    print(f"Wins as first: {wins_as_first/n_game:.2%}")
 
     print("starting evaluation as second player")
     wins_as_second = 0
@@ -316,13 +314,13 @@ if __name__ == "__main__":
         winner = g.play(RandomPlayer(), player_trainee)
         if winner == 1:
             wins_as_second += 1
-    print(f"Wins as second: {wins_as_second/n_game:.2f}%")
+    print(f"Wins as second: {wins_as_second/n_game:.2%}")
 
     print(
-        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2f}%"
+        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2%}"
     )
 
-    player_trainee.save_space()
+    # player_trainee.save_space(1)
 
     print("starting evaluation as first player")
     wins_as_first = 0
@@ -330,7 +328,7 @@ if __name__ == "__main__":
         winner = g.play(player_trainee, RandomPlayer())
         if winner == 0:
             wins_as_first += 1
-    print(f"Wins as first: {wins_as_first/n_game:.2f}%")
+    print(f"Wins as first: {wins_as_first/n_game:.2%}")
 
     print("starting evaluation as second player")
     wins_as_second = 0
@@ -338,9 +336,9 @@ if __name__ == "__main__":
         winner = g.play(RandomPlayer(), player_trainee)
         if winner == 1:
             wins_as_second += 1
-    print(f"Wins as second: {wins_as_second/n_game:.2f}%")
+    print(f"Wins as second: {wins_as_second/n_game:.2%}")
 
     print(
-        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2f}%"
+        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2%}"
     )
-    player_trainee.save_policy()
+    # player_trainee.save_policy()
