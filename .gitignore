@@ -2,6 +2,3 @@
 Slides/
 .DS_Store
 Quixo/__pycache__
-Quixo/Policies
-Quixo/Quixo/Policies/policy2.json
-Quixo/Quixo/Policies/policy.json

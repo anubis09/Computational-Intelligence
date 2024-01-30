@@ -19,7 +19,6 @@ class KeyValuePolicyTrainer(RLayer):
         self._lr = 0.2
         self._gamma_decay = 0.9
         self.is_Q_learn = is_Q_learn
-        # self.is_new_key = True
 
     def set_epsilon(self, eps: int) -> None:
         self._epsilon = eps
@@ -54,14 +53,6 @@ class KeyValuePolicyTrainer(RLayer):
             move = self.exploration(key=key, possible_moves=possible_moves)
             return move
         else:
-            # best_move = None
-            # best_value = float("-inf")
-            # if self._policy[key].keys():
-            #     # we know moves in this board set
-            #     for k, v in self._policy[key].items():
-            #         if v > best_value:
-            #             best_value = v
-            #             best_move = self.str_to_move(k)
             if self._policy[key].keys():
                 best_move = self.str_to_move(
                     max(self._policy[key].items(), key=lambda item: item[1])[0]
@@ -118,25 +109,17 @@ class KeyValuePolicyTrainer(RLayer):
         return counter, len(self._policy.keys())
 
     def save_space(self, top_k: int = -1):
-
-        MIN_MOVES = 4
+        MIN_MOVES = 0
         N_DECIMAL = 2
 
         print("started pruning")
         for k, dictio in list(self._policy.items()):
             all_sub_keys = list(dictio.keys())
-            # removing all characters from the key.
-            # new_key = (
-            #     new_key.replace(" ", "")
-            #     .replace("[", "")
-            #     .replace("]", "")
-            #     .replace("\n", "")
-            # )
 
             if len(all_sub_keys) <= MIN_MOVES:
                 self._policy.pop(k)
 
-            if len(all_sub_keys) > top_k > 0:
+            if len(all_sub_keys) >= top_k > 0:
                 k_keys = heapq.nlargest(
                     top_k, dictio, key=dictio.get
                 )  # this sort by values.
@@ -145,10 +128,11 @@ class KeyValuePolicyTrainer(RLayer):
                         dictio.pop(sub_key)
                     else:
                         if top_k == 1:
-                            dictio[sub_key] = round(dictio[sub_key], N_DECIMAL)
-               
-            # if k != new_key:
-            #     self._policy.pop(k)
+                            new_val = round(dictio[sub_key], N_DECIMAL)
+                            if new_val <= 0.01:
+                                self._policy.pop(k)
+                            else:
+                                dictio[sub_key] = new_val
 
         print("pruning ended")
         return
@@ -288,21 +272,15 @@ if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
         is_Q_learn=False,
         name="",
-        file_name="policy2.json",
+        file_name="policy.json",
     )
-
-    # player_trainer = KeyValuePolicyTrainer(
-    #     is_Q_learn=False,
-    #     name="",
-    #     file_name="new_policy_value_it_rl_random_6M.json",
-    # )
 
     g = GameTrainer()
 
     # g.train(player_trainee, RandomPlayer(), 2_000_000)
 
     player_trainee.is_training = False
-    n_game = 1000
+    n_game = 2000
 
     print("starting evaluation as first player")
     wins_as_first = 0
@@ -324,25 +302,10 @@ if __name__ == "__main__":
         f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2%}"
     )
 
-    # player_trainee.save_space(1)
+    player_trainee.policy_stat()
 
-    print("starting evaluation as first player")
-    wins_as_first = 0
-    for _ in range(n_game):
-        winner = g.play(player_trainee, RandomPlayer())
-        if winner == 0:
-            wins_as_first += 1
-    print(f"Wins as first: {wins_as_first/n_game:.2%}")
+    player_trainee.save_space(1)
 
-    print("starting evaluation as second player")
-    wins_as_second = 0
-    for _ in range(n_game):
-        winner = g.play(RandomPlayer(), player_trainee)
-        if winner == 1:
-            wins_as_second += 1
-    print(f"Wins as second: {wins_as_second/n_game:.2%}")
+    player_trainee.policy_stat()
 
-    print(
-        f"total percentage: {(wins_as_first + wins_as_second)/(n_game*2):.2%}"
-    )
-    # player_trainee.save_policy()
+    player_trainee.save_policy()

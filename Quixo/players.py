@@ -1,4 +1,5 @@
 import random
+import pandas as pd
 from game import Game, Move, Player
 import json
 from collections import defaultdict
@@ -6,6 +7,7 @@ import os
 
 
 def random_move() -> tuple[tuple[int, int], Move]:
+    """Returns a random move"""
     from_pos = (random.randint(0, 4), random.randint(0, 4))
     move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
     return from_pos, move
@@ -23,11 +25,14 @@ class RLayer(Player):
     def __init__(self, name: str = "", file_name: str = "") -> None:
         self.name = name
         self.file_name = file_name
-        self.n_moves = 0 # counter for number of moves
-        # if a file name is given, it loads the policy
-        # otherwise it create the policy
+        self.n_moves = 0  # counter for number of moves
         if file_name:
-            path = os.path.join("Quixo", "Policies")
+            # if a file name is given, it loads the policy
+            path = (
+                "Policies"
+                if "Quixo" in os.getcwd()
+                else os.path.join("Quixo", "Policies")
+            )  # we see where we are executing the file.
             if not file_name.endswith(".json"):
                 file_name = file_name + ".json"
             self.file_name = file_name
@@ -37,15 +42,16 @@ class RLayer(Player):
             self._policy = defaultdict(lambda: dict(), dict(json.load(f)))
             print(f"{self.file_name} loaded")
         else:
+            # No policy given so it creates a new one
             self._policy = defaultdict(lambda: dict())
 
-    # convert a move to its str format
     def move_to_str(self, move: tuple[tuple[int, int], Move]) -> str:
+        """Convert a move to its str format"""
         pos, slide = move
         return str(pos) + ";" + str(slide)  # '(1,2);Move.TOP'
 
-    # convert a str to its move format
     def str_to_move(self, move_str: str) -> tuple[tuple[int, int], Move]:
+        """Convert a str to its move format"""
         pos, slide = move_str.split(";")
         pos = eval(pos)  # from tuple string to just tuple
         slide_move = slide.split(".")[1]  # TOP, BOTTOM, RIGHT, LEFT
@@ -61,13 +67,19 @@ class RLayer(Player):
         return (pos, slide)
 
     def make_move(self, game: Game) -> tuple[tuple[int, int], Move]:
+        """We select the best move associated with a certain board state."""
         self.n_moves += 1
-        # selects the best move in the policy.
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
-        key = key.replace(" ", "").replace("[", "").replace("]", "").replace("\n", "")
+        key = (
+            key.replace(" ", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("\n", "")
+        )
         if self._policy[key].keys():
+            # if we have at least a move associated with that state, we select the best.
             best_move = self.str_to_move(
                 max(self._policy[key].items(), key=lambda item: item[1])[0]
             )
@@ -75,6 +87,14 @@ class RLayer(Player):
         else:
             # we don't know any moves so we just take one random.
             return random_move()
+
+    def policy_stat(self):
+        """Returns some statistical information about the values stored in the policy."""
+        values = []
+        for dictio in self._policy.values():
+            values.append(list(dictio.values()))
+        df = pd.DataFrame(values)
+        print(df.describe())
 
 
 class HumanPlayer(Player):

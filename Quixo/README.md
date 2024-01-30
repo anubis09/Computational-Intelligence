@@ -14,7 +14,9 @@ We created an agent based on Reinforcement Learning teqniques, which is able to 
 - ```game.py``` : This is the file presenting the implementation of the Quixo ```Game``` class, the ```Player``` class and the ```Move``` class. We took this file from the commit and we modified the print function, in order to print a prettier board. We also enabled the ```play``` method to print the board after every move.
 - ```players.py```: This file contains implementations of players employing various strategies, ```RandomPlayer```, ```HumanPlayer```,  ```RLayer``` (our player trained using reinforcemnt learning tequniques).
 - ```train.py```: In this file we implemented the methods that allowed us to train our player. We had to subclass the ```game``` class in order to facilitate our training. 
-- Policy used by our player can be found in ```Quixo/Quixo/Polcies```
+- ```DeepQ.ipynb```: In this notebook we tried to implement a DeepQ-learning approach (following this [guide](https://towardsdatascience.com/how-to-teach-an-ai-to-play-games-deep-reinforcement-learning-28f9b920440a)). The net was higly unstable and very slow, so we couldn't optimize it properly. In the future we would like to focus on this approach because we believe it can deliver high performance with fewer computational power when compared to simple Q-learning.
+- Policy used by our player can be found in ```Quixo/Polcies```
+
 
 ## Policy
 The policy is a dictionary that, after training, is turned into a JSON file. We structred the policy dictionary in the following format:
@@ -32,10 +34,10 @@ Where the keys of the outer dictionary are a string representing the board state
 
 The value is another dictionary where the keys are the strings representing the position of the cube to take, plus the slide move to apply. The value is the value representing the goodness of the move.
 
-The policy values are updated following a value iteration strategy:
+The policy values are updated following a Q-Learning strategy:
 - $V(S) = V(S) + lr * (gamma\_decay*reward - V(S))$
 
-where the reward becomes the V(S) at each iteration. 
+Where the reward becomes the V(S) at each iteration. We start from the last state visited and we end up in the first one.
 
 In the following section we will describe how we trained our agent, and how we optimized the size of the policy.
 
@@ -67,17 +69,24 @@ In the training phase, if a game extends beyond 150 moves, we categorize it as a
 
 ## Policy pruning
 We build a function ```save_space``` in order to reduce dimensions of the final policy:
-- It removes all (key, value) pairs where the number of discovered moves is lower than the specified threshold, `MIN_MOVES`: having a low number of moves associated with a particular board state indicates that these states have been rarely encountered. Therefore, opting for a learned move instead of a random move in such instances doesn't confer significant advantages, and so they can be removed. We have set ```MIN_MOVES``` = 4.
+- It removes all the entries (board states) where the number of discovered moves is lower than the specified threshold, `MIN_MOVES`: having a low number of moves associated with a particular board state indicates that these states have been rarely encountered. Therefore, opting for a learned move instead of a random move in such instances doesn't confer significant advantages, and so they can be removed. We have set ```MIN_MOVES``` = 4.
 - It only retains the top-k moves for each key: during inference, our player will make the move with the highest associated value. Thus, there is no need to store all other possible moves different from the best learned one after training. We have set `top_k` = 1.
 - It rounds the value associated with each key to `N_DECIMAL` decimal digits. We have set `N_DECIMAL` = 2.
+
+After all this steps our policy weighted around 155 MB.
+We decided to investigate the values stored in our policy, using the ```policy_stat``` method of our RL layer. 
+It showed us that the policy contained around 2.2 million entries and that the 50th percentile was 0. So more than half values stored were <=0.
+We decided to remove all the values below 0.01, since the move discovered was actually not taking any reward, so we could afford to play randomly in that case. 
+
+In the end our policy contains around 690k entries and it weights 51.9MB.
+
+Further pruning of the policy reduces the performances of our agents.
 
 ## Results
 
 These are the results of our agent against a random player, evaluated when starting as the first player, as well as when starting as the second player, with a total of 50,000 games for each scenario:
-- Games won starting as first player: $90.5\%$
-- Games won starting as second player: $84.2\%$
+- Games won starting as first player: $90.6\%$
+- Games won starting as second player: $84.4\%$
   
 In total, it won $87.5\%$ of games against the random player.
 On average, our player make 23 moves/game.
-
-We also tried to implement other strategies ... (non so che dire qui)
