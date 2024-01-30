@@ -65,7 +65,7 @@ In the training phase, if a game extends beyond 150 moves, we categorize it as a
 1. Our agent(no policy) vs RLayer2(no policy), for 2 milions games: Here our RLayer will start building its policy starting in full exploration (```epsilon``` = 1), and ending up with a value of 0.3 exploration at the end of this training.
 2. Our agent(policy learnt in step 1) vs random player, for 4 milions games.
 3. Our agent(policy learnt in step 2) vs RLayer2(policy learnt by our agent in step 2), for 2 milions games: This allows our player to enhance its policy by playing against its own learned strategy.
-4. Our agent(policy learnt in step 3) vs random player, YYY milions games: This final step is designed to construct the ultimate optimal policy tailored to the player against which it will be evaluated.
+4. Our agent(policy learnt in step 3) vs random player, 12 milions games: This final step is designed to construct the ultimate optimal policy tailored to the player against which it will be evaluated.
 
 ## Policy pruning
 We build a function ```save_space``` in order to reduce dimensions of the final policy:

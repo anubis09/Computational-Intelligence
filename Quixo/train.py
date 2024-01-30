@@ -109,7 +109,7 @@ class KeyValuePolicyTrainer(RLayer):
         return counter, len(self._policy.keys())
 
     def save_space(self, top_k: int = -1):
-        MIN_MOVES = 0
+        MIN_MOVES = 4
         N_DECIMAL = 2
 
         print("started pruning")
