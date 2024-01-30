@@ -118,6 +118,10 @@ class KeyValuePolicyTrainer(RLayer):
         return counter, len(self._policy.keys())
 
     def save_space(self, top_k: int = -1):
+
+        MIN_MOVES = 4
+        N_DECIMAL = 2
+
         print("started pruning")
         for k, dictio in list(self._policy.items()):
             all_sub_keys = list(dictio.keys())
@@ -129,7 +133,7 @@ class KeyValuePolicyTrainer(RLayer):
             #     .replace("\n", "")
             # )
 
-            if len(all_sub_keys) <= 4:
+            if len(all_sub_keys) <= MIN_MOVES:
                 self._policy.pop(k)
 
             if len(all_sub_keys) > top_k > 0:
@@ -141,7 +145,7 @@ class KeyValuePolicyTrainer(RLayer):
                         dictio.pop(sub_key)
                     else:
                         if top_k == 1:
-                            dictio[sub_key] = round(dictio[sub_key], 2)
+                            dictio[sub_key] = round(dictio[sub_key], N_DECIMAL)
                
             # if k != new_key:
             #     self._policy.pop(k)
