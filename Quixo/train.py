@@ -95,8 +95,7 @@ class KeyValuePolicyTrainer(RLayer):
             # we remove all states that are associated with less moves than MIN_MOVES.
             if len(all_sub_keys) <= MIN_MOVES:
                 self._policy.pop(k)
-
-            if len(all_sub_keys) >= top_k > 0:
+            elif len(all_sub_keys) >= top_k > 0:
                 # We select the top_k keys
                 k_keys = heapq.nlargest(
                     top_k, dictio, key=dictio.get
@@ -253,7 +252,7 @@ if __name__ == "__main__":
 
     g = GameTrainer()
 
-    # g.train(player_trainee, RandomPlayer(), 2_000_000)
+    # g.train(player_trainee, RandomPlayer(), 2_000)
 
     player_trainee.is_training = False
     n_game = 2000
@@ -280,7 +279,8 @@ if __name__ == "__main__":
 
     player_trainee.policy_stat()
 
-    player_trainee.save_space(1)
+    # please if you want to use save space on the loaded policy, change N_MOVES to 0.
+    # player_trainee.save_space(1)
 
     player_trainee.policy_stat()
 
