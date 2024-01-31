@@ -15,8 +15,7 @@ We created an agent based on Reinforcement Learning teqniques, which is able to 
 - ```players.py```: This file contains implementations of players employing various strategies, ```RandomPlayer```, ```HumanPlayer```,  ```RLayer``` (our player trained using reinforcemnt learning techniques).
 - ```train.py```: In this file we implemented the methods that allowed us to train our player. We had to subclass the ```game``` class in order to facilitate our training. 
 - ```DeepQ.ipynb```: In this notebook we tried to implement a DeepQ-learning approach (following this [guide](https://towardsdatascience.com/how-to-teach-an-ai-to-play-games-deep-reinforcement-learning-28f9b920440a)). The net was higly unstable and very slow, so we couldn't optimize it properly. In the future we would like to focus on this approach because we believe it can deliver high performance with fewer computational power when compared to simple Q-learning.
-- Policy used by our player can be found in ```Quixo/Policies```. Please remember to unzip the policy.
-
+- Policy used by our player can be found in ```Quixo/Policies```. 
 
 ## Policy
 The policy is a dictionary that, after training, is turned into a JSON file. We structred the policy dictionary in the following format:
