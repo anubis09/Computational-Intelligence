@@ -88,8 +88,8 @@ class RLayer(Player):
             # we don't know any moves so we just take one random.
             return random_move()
 
-    def policy_stat(self):
-        """Returns some statistical information about the values stored in the policy."""
+    def policy_stat(self) -> None:
+        """Prints some statistical information about the values stored in the policy."""
         values = []
         for dictio in self._policy.values():
             values.append(list(dictio.values()))

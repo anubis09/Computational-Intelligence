@@ -8,9 +8,7 @@ from tqdm import tqdm
 
 
 class KeyValuePolicyTrainer(RLayer):
-    def __init__(
-        self, is_Q_learn: bool, name: str = "", file_name: str = ""
-    ) -> None:
+    def __init__(self, name: str = "", file_name: str = "") -> None:
         super().__init__(name, file_name)
         # load policy as default dict.
         self.is_training = True
@@ -18,18 +16,19 @@ class KeyValuePolicyTrainer(RLayer):
         self._game_moves = []
         self._lr = 0.2
         self._gamma_decay = 0.9
-        self.is_Q_learn = is_Q_learn
 
     def set_epsilon(self, eps: int) -> None:
+        """Set the exploration rate."""
         self._epsilon = eps
 
     def get_epsilon(self) -> int:
+        """Returns the current exploration rate."""
         return self._epsilon
 
     def exploration(
         self, key: str, possible_moves: list
     ) -> tuple[tuple[int, int], Move]:
-        # exploration phase
+        """Returns a random move from all the possible ones."""
         index = np.random.choice(len(possible_moves))
         move = possible_moves[index]
         if not move in self._policy[key].keys():
@@ -38,11 +37,12 @@ class KeyValuePolicyTrainer(RLayer):
         return move
 
     def make_move(self, game: "GameTrainer") -> tuple[tuple[int, int], Move]:
+        """Returns a random move if goes in exploration, otherwise returns the best move that the agent has learnt."""
         possible_moves = game.get_possible_moves()
         board_hash = str(game.get_board())
         pl_id = str(game.get_current_player())
         key = board_hash + pl_id
-        # if self.is_new_key:
+        # remove not useful characters.
         key = (
             key.replace(" ", "")
             .replace("[", "")
@@ -50,9 +50,11 @@ class KeyValuePolicyTrainer(RLayer):
             .replace("\n", "")
         )
         if self.is_training and np.random.random() < self._epsilon:
+            # exploration mode.
             move = self.exploration(key=key, possible_moves=possible_moves)
             return move
         else:
+            # we take the best move for this state from our policy
             if self._policy[key].keys():
                 best_move = self.str_to_move(
                     max(self._policy[key].items(), key=lambda item: item[1])[0]
@@ -60,75 +62,53 @@ class KeyValuePolicyTrainer(RLayer):
                 self._game_moves.append((key, self.move_to_str(best_move)))
                 return best_move
             else:
-                # we don't know any moves so we just take it randomly.
+                # we've never seen the state, so we go in exploration
                 move = self.exploration(key=key, possible_moves=possible_moves)
                 return move
 
     def back_prop(self, reward: int) -> None:
-        if self.is_Q_learn:
-            self.q_learn_back_prop(reward)
-        else:
-            self.value_iteration_back_prop(reward)
-
-    def value_iteration_back_prop(self, reward: int) -> None:
         """
         The back_prop function is responsible for updating the policy values in the agent's memory during the training process.
         It adjusts the policy values based on the received reward.
         """
         for _ in range(len(self._game_moves)):
             state = self._game_moves.pop()
-            # state tuple(board, move)
+            # state is a tuple(board, move)
             board = state[0]
             move = state[1]
             self._policy[board][move] += self._lr * (
                 self._gamma_decay * reward - self._policy[board][move]
             )
             reward = self._policy[board][move]
+        # the game is ended, so we reset the move list.
         self._game_moves = []
+        return
 
-    def q_learn_back_prop(self, reward: int) -> None:
-        """The back_prop function is responsible for updating the policy values in the agent's memory during the training process.
-        It adjusts the policy values based on the received reward, in a Q learning setting
-        """
-        for i in range(len(self._game_moves) - 1):
-            r = 0 if i < len(self._game_moves) - 2 else reward
-            # state is a tuple (board, move)
-            board, move = self._game_moves[i]
-            next_board, _ = self._game_moves[i + 1]
-            self._policy[board][move] += self._lr * (
-                r
-                + self._gamma_decay * (max(self._policy[next_board].values()))
-                - self._policy[board][move]
-            )
-            # the reward for the intra moves is set to 0.
-        self._game_moves = []
-
-    def n_explored_states(self):
-        # states different from zero.
-        counter = 0
-        return counter, len(self._policy.keys())
-
-    def save_space(self, top_k: int = -1):
+    def save_space(self, top_k: int = -1) -> None:
+        """Shrinks the policy, without impatting the performances."""
         MIN_MOVES = 4
         N_DECIMAL = 2
 
         print("started pruning")
         for k, dictio in list(self._policy.items()):
             all_sub_keys = list(dictio.keys())
-
+            # we remove all states that are associated with less moves than MIN_MOVES.
             if len(all_sub_keys) <= MIN_MOVES:
                 self._policy.pop(k)
 
             if len(all_sub_keys) >= top_k > 0:
+                # We select the top_k keys
                 k_keys = heapq.nlargest(
                     top_k, dictio, key=dictio.get
                 )  # this sort by values.
                 for sub_key in all_sub_keys:
+                    # we remove all the keys that are not in the top_k list.
                     if sub_key not in k_keys:
                         dictio.pop(sub_key)
                     else:
                         if top_k == 1:
                             new_val = round(dictio[sub_key], N_DECIMAL)
+                            # if the rounded value is really low, we can prune those states.
                             if new_val <= 0.01:
                                 self._policy.pop(k)
                             else:
@@ -138,9 +118,7 @@ class KeyValuePolicyTrainer(RLayer):
         return
 
     def save_policy(self) -> None:
-        """
-        It saves the policy
-        """
+        """This function saves the policy in a JSON file."""
         path = os.path.join("Quixo", "Policies")
         if not os.path.exists(path):
             os.makedirs(path)
@@ -150,6 +128,7 @@ class KeyValuePolicyTrainer(RLayer):
         print(f"saving {self.file_name}")
         json.dump(self._policy, f)
         print(f"{self.file_name} saved")
+        return
 
 
 class GameTrainer(Game):
@@ -157,7 +136,7 @@ class GameTrainer(Game):
         super().__init__()
 
     def print(self) -> None:
-        # os.system("cls||clear")
+        # we need to train, so we don't need to print the board states.
         pass
 
     def __acceptable_slides(self, from_position: tuple[int, int]):
@@ -177,9 +156,8 @@ class GameTrainer(Game):
             acceptable_slides.remove(Move.RIGHT)
         return acceptable_slides
 
-    def get_possible_moves(self):
-        # __acceptable_slides -> prende from_pos e ritorna le slides possibili.
-        # for solo sugli element di contorno. e prendiamo le posizion. poi abbiamo acceptable_slides che ci dice le slide possivbili.
+    def get_possible_moves(self) -> list[tuple[tuple[int, int], Move]]:
+        """This function returns all the possible moves valid in the current board state"""
         moves = []
         for row in [0, 4]:
             for col in range(5):
@@ -200,6 +178,7 @@ class GameTrainer(Game):
         return moves
 
     def play(self, player1: Player, player2: Player) -> int:
+        """Same play of the parent class, but we reset the board, and we count the number of moves made."""
         self._board = np.full((5, 5), -1, dtype=np.int8)
         self.current_player_idx = -1
         players = [player1, player2]
@@ -209,24 +188,19 @@ class GameTrainer(Game):
             self.current_player_idx += 1
             self.current_player_idx %= len(players)
             ok = False
-            in_loop = 0
             while not ok:
-                in_loop += 1
                 from_pos, slide = players[self.current_player_idx].make_move(
                     self
                 )
                 ok = self._Game__move(from_pos, slide, self.current_player_idx)
-                if in_loop > 200:
-                    pass
             n_move += 1
             winner = self.check_winner()
         return winner
 
-    # look at the problem of the starting position.
-    # The idea could be to leave the play as it is, then we can make our players play as first then as second.
-    # we can also make array players shuffle. -> i'll go with this solution
     def train(self, trainee: Player, trainer: Player, epochs: int) -> None:
+        """Function for training two agents at the same time."""
         if not trainee.file_name:
+            # First training, so we start with full exploration mode.
             print("starting full exploration mode")
             trainee.set_epsilon(1)
         if isinstance(trainer, RLayer) and not trainer.file_name:
@@ -239,12 +213,14 @@ class GameTrainer(Game):
         bar = tqdm(total=epochs, desc="Epoch")
         for ep in range(epochs):
             if ep % (epochs // 30) == 0:
+                # step by step we reduce the exporation rate.
                 old_eps = trainee.get_epsilon()
                 new_eps = old_eps - 0.1 if old_eps > 0.3 else old_eps
-                # eps decrease at the same rate for both.
                 trainee.set_epsilon(new_eps)
+                # eps decrease at the same rate for both.
                 if isinstance(trainer, RLayer):
                     trainer.set_epsilon(new_eps)
+            # we shuffle the players so the agent is trained to start as first and as second.
             np.random.shuffle(players)
             winner_idx = self.play(players[0], players[1])
             loser_idx = (winner_idx + 1) % 2
@@ -263,6 +239,7 @@ class GameTrainer(Game):
             bar.update(1)
         if isinstance(trainee, RLayer):
             trainee.save_policy()
+        # we can also save the policy learned from the trainer.
         # if isinstance(trainer, RLayer):
         #     trainer.save_policy()
         return
@@ -270,7 +247,6 @@ class GameTrainer(Game):
 
 if __name__ == "__main__":
     player_trainee = KeyValuePolicyTrainer(
-        is_Q_learn=False,
         name="",
         file_name="policy.json",
     )
