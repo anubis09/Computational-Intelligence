@@ -35,9 +35,9 @@ Where the keys of the outer dictionary are a string representing the board state
 The value is another dictionary where the keys are the strings representing the position of the cube to take, plus the slide move to apply. The value is the value representing the goodness of the move.
 
 The policy values are updated following a Q-Learning strategy:
-- $V(S) = V(S) + lr * (gamma\_decay*reward - V(S))$
+- $V(S) = V(S) + lr * (\text{gamma-decay}*\text{reward} - V(S))$
 
-Where the reward becomes the V(S) at each iteration. We start from the last state visited and we end up in the first one.
+Where the reward becomes the $V(S)$ at each iteration. When assigning rewards, we start from the last visited state and we end with the first one.
 
 In the following section we will describe how we trained our agent, and how we optimized the size of the policy.
 
@@ -75,7 +75,7 @@ We build a function ```save_space``` in order to reduce dimensions of the final 
 
 After all this steps our policy weighted around 155 MB.
 We decided to investigate the values stored in our policy, using the ```policy_stat``` method of our RL layer. 
-It showed us that the policy contained around 2.2 million entries and that the 50th percentile was 0. So more than half values stored were <=0.
+It showed us that the policy contained around 2.2 million entries and that the 50th percentile was 0. So more than half values stored were $\le 0$.
 We decided to remove all the values below 0.01, since the move discovered was actually not taking any reward, so we could afford to play randomly in that case. 
 
 In the end our policy contains around 690k entries and it weights 51.9MB.
@@ -85,8 +85,8 @@ Further pruning of the policy reduces the performances of our agents.
 ## Results
 
 These are the results of our agent against a random player, evaluated when starting as the first player, as well as when starting as the second player, with a total of 50,000 games for each scenario:
-- Games won starting as first player: $90.6\%$
-- Games won starting as second player: $84.4\%$
+- Games won starting as first player: $90.6$%
+- Games won starting as second player: $84.4$%
   
-In total, it won $87.5\%$ of games against the random player.
+In total, it won $87.5$% of games against the random player.
 On average, our player make 23 moves/game.
