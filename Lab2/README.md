@@ -39,7 +39,7 @@ The fitness value assigned to each move is the number of wins that the pure rand
 Based on 500 games in total, we evaluate how many games can our `real_es` strategy win against an oponent.
 These are the main results:
 - using `pure_random` strategy as opponent: 82 % of wins
-- using `gabriele` strategy as opponent: 90 % of wins
+- using `gabriele` strategy as opponent: 90 % of winsS
 - using `optimal` strategy as opponent: 77 % of wins
 
 ![real es VS optimal](https://github.com/andry2327/Computational-Intelligence/blob/main/LABS/L02%20-%20NIM-ES/img/plot_reals_es_VS_optimal.png)
