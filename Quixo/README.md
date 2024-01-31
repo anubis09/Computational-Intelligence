@@ -6,7 +6,7 @@ Our code refers to the following commit: 36854293decbb4496061a2295f2d2fcd0c61d4d
 
 ## Overview
 In this final Lab we had to develop an agent able to play the Quixo game (you can find a description in ```Quixo.pdf```) and aim to achieve good results against a random player. 
-We created an agent based on Reinforcement Learning teqniques, which is able to play through a policy learned with Value Iteration.
+We created an agent based on Reinforcement Learning teqniques, which is able to play through a policy learned with Q-Learning.
 
 ## Files description
 
